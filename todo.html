@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do List</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 30px;
+      color: #222;
+    }
+
+    .app-container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      padding: 24px;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    #taskInput {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    #addTaskButton {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #4caf50;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    #addTaskButton:hover {
+      background: #43a047;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      flex-wrap: wrap;
+    }
+
+    .task-label {
+      flex: 1;
+      font-size: 1rem;
+    }
+
+    .task-label.completed {
+      text-decoration: line-through;
+      color: #777;
+    }
+
+    .task-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .edit-btn,
+    .remove-btn {
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .edit-btn {
+      background: #f44336;
+    }
+
+    .edit-btn:hover {
+      background: #e53935;
+    }
+
+    .remove-btn {
+      background: #f44336;
+    }
+
+    .remove-btn:hover {
+      background: #d32f2f;
+    }
+
+    .empty-message {
+      color: #666;
+      font-style: italic;
+      margin-top: 10px;
+    }
+
+    dialog {
+      border: none;
+      border-radius: 8px;
+      padding: 20px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .dialog-title {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    #editTaskInput {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .dialog-actions button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #saveEditButton {
+      background: #1976d2;
+      color: #fff;
+    }
+
+    #cancelEditButton {
+      background: #e0e0e0;
+      color: #222;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>To-Do List</h1>
+
+    <div class="input-row">
+      <input type="text" id="taskInput" placeholder="Enter new task" />
+      <button id="addTaskButton">Add Task</button>
+    </div>
+
+    <ul id="taskList"></ul>
+    <p id="emptyMessage" class="empty-message">No tasks yet. Add one above.</p>
+  </div>
+
+  <dialog id="editDialog">
+    <h3 class="dialog-title">Edit task:</h3>
+    <input type="text" id="editTaskInput" />
+    <div class="dialog-actions">
+      <button id="saveEditButton">OK</button>
+      <button id="cancelEditButton">Cancel</button>
+    </div>
+  </dialog>
+
+  <script>
+    // Store references to the main page elements so the DOM can be updated cleanly.
+    const taskInput = document.getElementById("taskInput");
+    const addTaskButton = document.getElementById("addTaskButton");
+    const taskList = document.getElementById("taskList");
+    const emptyMessage = document.getElementById("emptyMessage");
+    const editDialog = document.getElementById("editDialog");
+    const editTaskInput = document.getElementById("editTaskInput");
+    const saveEditButton = document.getElementById("saveEditButton");
+    const cancelEditButton = document.getElementById("cancelEditButton");
+
+    let currentTaskItem = null;
+
+    // Create a new task element and add it to the list.
+    function addTask() {
+      const taskText = taskInput.value.trim();
+
+      if (taskText === "") {
+        alert("Please enter a task.");
+        return;
+      }
+
+      const listItem = document.createElement("li");
+      listItem.className = "task-item";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "task-checkbox";
+
+      const label = document.createElement("span");
+      label.className = "task-label";
+      label.textContent = taskText;
+
+      const buttonGroup = document.createElement("div");
+      buttonGroup.className = "task-buttons";
+
+      const editButton = document.createElement("button");
+      editButton.className = "edit-btn";
+      editButton.textContent = "Edit";
+
+      const removeButton = document.createElement("button");
+      removeButton.className = "remove-btn";
+      removeButton.textContent = "Remove";
+
+      buttonGroup.appendChild(editButton);
+      buttonGroup.appendChild(removeButton);
+
+      listItem.appendChild(checkbox);
+      listItem.appendChild(label);
+      listItem.appendChild(buttonGroup);
+
+      taskList.appendChild(listItem);
+      taskInput.value = "";
+      updateEmptyMessage();
+    }
+
+    // Open the edit dialog and preload the selected task text.
+    function openEditDialog(taskItem) {
+      currentTaskItem = taskItem;
+      const label = taskItem.querySelector(".task-label");
+      editTaskInput.value = label.textContent;
+      editDialog.showModal();
+    }
+
+    // Save edited task text back to the list item.
+    function saveEdit() {
+      const newText = editTaskInput.value.trim();
+
+      if (newText === "") {
+        alert("Task text cannot be empty.");
+        return;
+      }
+
+      const label = currentTaskItem.querySelector(".task-label");
+      label.textContent = newText;
+      editDialog.close();
+      currentTaskItem = null;
+    }
+
+    // Show or hide the empty list message depending on whether tasks exist.
+    function updateEmptyMessage() {
+      emptyMessage.style.display = taskList.children.length === 0 ? "block" : "none";
+    }
+
+    // Add task when the button is clicked.
+    addTaskButton.addEventListener("click", addTask);
+
+    // Allow users to add a task by pressing Enter.
+    taskInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        addTask();
+      }
+    });
+
+    // Use event delegation so one listener can manage all task actions.
+    taskList.addEventListener("click", function (event) {
+      const target = event.target;
+      const taskItem = target.closest(".task-item");
+
+      if (!taskItem) return;
+
+      // Handle edit button clicks.
+      if (target.classList.contains("edit-btn")) {
+        openEditDialog(taskItem);
+      }
+
+      // Handle remove button clicks.
+      if (target.classList.contains("remove-btn")) {
+        taskItem.remove();
+        updateEmptyMessage();
+      }
+
+      // Handle checkbox changes through click behavior.
+      if (target.classList.contains("task-checkbox")) {
+        const label = taskItem.querySelector(".task-label");
+        label.classList.toggle("completed", target.checked);
+      }
+    });
+
+    // Save edit when OK is clicked.
+    saveEditButton.addEventListener("click", saveEdit);
+
+    // Cancel editing without changes.
+    cancelEditButton.addEventListener("click", function () {
+      editDialog.close();
+      currentTaskItem = null;
+    });
+
+    // Close dialog if the user presses Escape or clicks outside actions.
+    editDialog.addEventListener("click", function (event) {
+      const dialogRect = editDialog.getBoundingClientRect();
+      const clickedInside =
+        event.clientX >= dialogRect.left &&
+        event.clientX <= dialogRect.right &&
+        event.clientY >= dialogRect.top &&
+        event.clientY <= dialogRect.bottom;
+
+      if (!clickedInside) {
+        editDialog.close();
+        currentTaskItem = null;
+      }
+    });
+
+    updateEmptyMessage();
+  </script>
+</body>
+</html>
