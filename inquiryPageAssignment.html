@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Contact Form</title>
+  <style>
+    /* Page layout and overall visual style */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      margin: 0;
+      padding: 20px;
+      color: #222;
+    }
+
+    /* Main content wrapper */
+    .container {
+      max-width: 750px;
+      margin: auto;
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Form title */
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #22314a;
+    }
+
+    /* Space between each form block */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    /* Label styling */
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* Shared control styling */
+    input, select, textarea, button {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      border: 1px solid #c9d3e0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    /* Message box should be larger */
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    /* Radio button row */
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    /* Single radio option layout */
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: auto;
+    }
+
+    .radio-option input {
+      width: auto;
+    }
+
+    /* Error message styling */
+    .error {
+      color: #c62828;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    /* Button row */
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .button-group button {
+      width: 50%;
+      cursor: pointer;
+      border: none;
+      color: white;
+      font-weight: bold;
+    }
+
+    .preview-btn {
+      background: #43a047;
+    }
+
+    .submit-btn {
+      background: #1e88e5;
+    }
+
+    /* Preview section */
+    #previewBox {
+      margin-top: 25px;
+      padding: 15px;
+      background: #eef5ff;
+      border-left: 5px solid #1e88e5;
+      display: none;
+    }
+
+    /* Responsive design for smaller screens */
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+
+      .button-group button {
+        width: 100%;
+      }
+
+      .radio-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Contact Us</h2>
+
+    <!-- 
+      Preview form uses GET so entered values appear in the query string.
+      On reload, the script reads those values and restores the preview.
+    -->
+    <form id="previewForm" method="get" action="">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name">
+        <div class="error" id="nameError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email">
+        <div class="error" id="emailError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="text" id="phone" name="phone" maxlength="10" placeholder="10 digits only">
+        <div class="error" id="phoneError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" name="message"></textarea>
+        <div class="error" id="messageError"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Preferred Contact Method</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="contactMethod" value="Email"> Email
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="contactMethod" value="Phone"> Phone
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="contactMethod" value="Both"> Both
+          </label>
+        </div>
+        <div class="error" id="contactMethodError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="inquiryType">Inquiry Type</label>
+        <select id="inquiryType" name="inquiryType">
+          <option value="">-- Select Inquiry Type --</option>
+          <option value="General Inquiry">General Inquiry</option>
+          <option value="Support Request">Support Request</option>
+          <option value="Feedback">Feedback</option>
+        </select>
+        <div class="error" id="inquiryTypeError"></div>
+      </div>
+
+      <!-- Buttons: preview uses GET, submit uses POST -->
+      <div class="button-group">
+        <button type="button" class="preview-btn" onclick="showPreview()">Preview</button>
+        <button type="submit" class="submit-btn" formaction="#" formmethod="post">Submit</button>
+      </div>
+    </form>
+
+    <!-- Preview output appears here -->
+    <div id="previewBox"></div>
+  </div>
+
+  <script>
+    // Read query string and show preview after page reload
+    function restorePreviewFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.toString() === "") return;
+
+      const previewBox = document.getElementById("previewBox");
+      previewBox.style.display = "block";
+      previewBox.innerHTML = `
+        <h3>Preview</h3>
+        <p><strong>Name:</strong> ${params.get("name") || ""}</p>
+        <p><strong>Email:</strong> ${params.get("email") || ""}</p>
+        <p><strong>Phone:</strong> ${params.get("phone") || ""}</p>
+        <p><strong>Message:</strong> ${params.get("message") || ""}</p>
+        <p><strong>Preferred Contact Method:</strong> ${params.get("contactMethod") || ""}</p>
+        <p><strong>Inquiry Type:</strong> ${params.get("inquiryType") || ""}</p>
+      `;
+
+      // Restore form values so the user can keep editing after reload
+      document.getElementById("name").value = params.get("name") || "";
+      document.getElementById("email").value = params.get("email") || "";
+      document.getElementById("phone").value = params.get("phone") || "";
+      document.getElementById("message").value = params.get("message") || "";
+      document.getElementById("inquiryType").value = params.get("inquiryType") || "";
+
+      const contactMethod = params.get("contactMethod");
+      if (contactMethod) {
+        const checkedRadio = document.querySelector(`input[name="contactMethod"][value="${contactMethod}"]`);
+        if (checkedRadio) checkedRadio.checked = true;
+      }
+    }
+
+    // Validate required fields, email format, and 10-digit phone number
+    function validateForm() {
+      let isValid = true;
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const message = document.getElementById("message").value.trim();
+      const inquiryType = document.getElementById("inquiryType").value;
+      const contactMethod = document.querySelector('input[name="contactMethod"]:checked');
+
+      // Clear old errors first
+      document.getElementById("nameError").textContent = "";
+      document.getElementById("emailError").textContent = "";
+      document.getElementById("phoneError").textContent = "";
+      document.getElementById("messageError").textContent = "";
+      document.getElementById("contactMethodError").textContent = "";
+      document.getElementById("inquiryTypeError").textContent = "";
+
+      // Validate name
+      if (name === "") {
+        document.getElementById("nameError").textContent = "Name is required.";
+        isValid = false;
+      }
+
+      // Validate email
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (email === "") {
+        document.getElementById("emailError").textContent = "Email is required.";
+        isValid = false;
+      } else if (!emailPattern.test(email)) {
+        document.getElementById("emailError").textContent = "Please enter a valid email address.";
+        isValid = false;
+      }
+
+      // Validate phone number as exactly 10 digits
+      const phonePattern = /^\d{10}$/;
+      if (phone === "") {
+        document.getElementById("phoneError").textContent = "Phone number is required.";
+        isValid = false;
+      } else if (!phonePattern.test(phone)) {
+        document.getElementById("phoneError").textContent = "Phone number must contain exactly 10 digits.";
+        isValid = false;
+      }
+
+      // Validate message
+      if (message === "") {
+        document.getElementById("messageError").textContent = "Message is required.";
+        isValid = false;
+      }
+
+      // Validate radio buttons
+      if (!contactMethod) {
+        document.getElementById("contactMethodError").textContent = "Please select a preferred contact method.";
+        isValid = false;
+      }
+
+      // Validate dropdown
+      if (inquiryType === "") {
+        document.getElementById("inquiryTypeError").textContent = "Please select an inquiry type.";
+        isValid = false;
+      }
+
+      return isValid;
+    }
+
+    // Build GET query string and reload the page so the preview persists
+    function showPreview() {
+      if (!validateForm()) return;
+
+      const params = new URLSearchParams();
+      params.set("name", document.getElementById("name").value.trim());
+      params.set("email", document.getElementById("email").value.trim());
+      params.set("phone", document.getElementById("phone").value.trim());
+      params.set("message", document.getElementById("message").value.trim());
+      params.set("inquiryType", document.getElementById("inquiryType").value);
+      params.set("contactMethod", document.querySelector('input[name="contactMethod"]:checked').value);
+
+      // Reload with GET data in the URL
+      window.location.href = window.location.pathname + "?" + params.toString() + "#previewBox";
+    }
+
+    // Final POST submission validation
+    document.getElementById("previewForm").addEventListener("submit", function(event) {
+      if (!validateForm()) {
+        event.preventDefault();
+      } else {
+        // Prevent real submission in a local file example
+        // Replace action="#" with your server endpoint when submitting online
+        alert("Form submitted successfully using POST.");
+      }
+    });
+
+    // Restore preview if the page loads with GET parameters
+    window.addEventListener("load", restorePreviewFromUrl);
+  </script>
+</body>
+</html>
